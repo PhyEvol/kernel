@@ -1,0 +1,88 @@
+# ========================================================
+#  OKSH CONFIGURATION - CRUX LINUX (Classic Aesthetic)
+# ========================================================
+
+# --- 1. ENTORNO ---
+export EDITOR='vim'
+export VISUAL='vim'
+export PAGER='less'
+export LANG='es_CL.UTF-8'
+
+# --- 2. HISTORIAL ---
+export HISTFILE="$HOME/.oksh_history"
+export HISTSIZE=5000
+export HISTCONTROL=ignoredups
+
+# --- 3. COMPORTAMIENTO (Emacs Mode) ---
+set -o emacs
+set -o physical
+set -o ignoreeof
+#bind '^L'=clear
+
+# --- 4. ESTÉTICA Y PROMPT (The Classic Look) ---
+E=$(printf '\033')
+A=$(printf '\001')
+
+# Tu paleta original
+C_RESET="${A}${E}[0m${A}"
+C_USER="${A}${E}[1;32m${A}"
+C_HOST="${A}${E}[1;35m${A}"
+C_DIR="${A}${E}[1;34m${A}"
+C_GIT="${A}${E}[1;33m${A}"
+
+_git_info() {
+    local branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+    if [ -n "$branch" ]; then
+        printf " ${C_GIT} $branch${C_RESET}"
+    fi
+}
+
+# Regresamos al prompt de una línea con el estilo que te gusta
+export PS1='${C_USER}${USER}${C_RESET}@${C_HOST}$(hostname -s)${C_RESET}:${C_DIR}${PWD##*/}${C_RESET}$(_git_info) ${C_USER}λ${C_RESET} '
+
+# --- 5. ALIASES ---
+alias ls='ls --color=auto -F'
+alias ll='ls -lh'
+alias la='ls -A'
+alias v='vim'
+alias ..='cd ..'
+alias grep='grep --color=auto'
+
+# Aliases de CRUX (Indispensables)
+alias p-up='sudo ports -u && prt-get diff'
+alias p-in='sudo prt-get depinst'
+alias p-se='prt-get search'
+alias p-err='prt-get errors'
+alias p-diff='prt-get diff'
+
+# --- 6. FUNCIONES ---
+mkcd() { mkdir -p "$1" && cd "$1"; }
+
+extract() {
+    if [ -f "$1" ] ; then
+        case "$1" in
+            *.tar.xz)         tar xJf "$1" ;;
+            *.tar.bz2|*.tbz2) tar xjf "$1" ;;
+            *.tar.gz|*.tgz)   tar xzf "$1" ;;
+            *.zip)            unzip "$1"   ;;
+            *.7z)             7z x "$1"    ;;
+            *) echo "Formato no soportado." ;;
+        esac
+    else
+        echo "'$1' no es un archivo válido"
+    fi
+}
+
+# --- fzy ---
+# Función para buscar archivos y ponerlos en el prompt
+ff() {
+    local file=$(find . -maxdepth 3 | fzy)
+    [ -n "$file" ] && print -z "$file"
+}
+
+
+
+# --- 7. BIENVENIDA (Tu cabecera original) ---
+if [ -z "$VIMRUNTIME" ]; then
+    printf "${C_HOST}Kernel:${C_RESET} $(uname -r) | ${C_HOST}Machine:${C_RESET} CRUX Linux\n"
+fi

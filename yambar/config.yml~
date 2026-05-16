@@ -1,0 +1,175 @@
+nerdfont: &nerdfont Symbols Nerd Font Mono:pixelsize=12 
+gomono: &gomono Terminess Nerd Font Mono:pixelsize=12
+bg_default: &bg_default {stack: [{background: {color: 00000000}}, {underline: {size: 3, color: 98971aff}}]}
+
+bar:
+  font: *gomono
+  height: 20
+  location: top
+  right-spacing: 8
+  right-margin: 10
+  border:
+    top-margin: 5 
+    left-margin: 10
+    right-margin: 10
+    color: D8DEE900 
+  background: 000000AA
+  foreground: ffffffff
+
+  left:
+    - river:
+        anchors:
+          - base: &river_base
+              left-margin: 10
+              right-margin: 10 
+              default: {string: {text: , font: *gomono}}
+              conditions:
+                id == 1: {string: {text: 1, font: *gomono}}  
+                id == 2: {string: {text: 2, font: *gomono}}  
+                id == 3: {string: {text: 3, font: *gomono}}  
+                id == 4: {string: {text: 4, font: *gomono}}  
+                id == 5: {string: {text: 5, font: *gomono}}  
+                id == 6: {string: {text: 6, font: *gomono}}  
+                id == 7: {string: {text: 7, font: *gomono}}  
+                id == 8: {string: {text: 8, font: *gomono}}  
+                id == 9: {string: {text: 9, font: *gomono}}
+                # id == 21: {string: {text: "Scratchpad", font: *gomono}}
+
+        content:
+          map:
+            on-click: 
+              left: sh -c "riverctl set-focused-tags $((1 << ({id} - 1)))"
+              right: sh -c "riverctl toggle-focused-tags $((1 << ({id} -1)))"
+              middle: sh -c "riverctl toggle-view-tags $((1 << ({id} -1)))"
+            conditions:
+              state == urgent:
+                map:
+                  <<: *river_base
+                  deco: {background: {color: D08770ff}}
+              state == focused:
+                map:
+                  <<: *river_base
+                  deco: *bg_default
+              state == visible && ~occupied:
+                map:
+                  <<: *river_base
+              state == visible && occupied:
+                map:
+                  <<: *river_base
+                  deco: *bg_default
+              state == unfocused:
+                map:
+                  <<: *river_base
+              state == invisible && ~occupied: {empty: {}}
+              state == invisible && occupied:
+                map:
+                  <<: *river_base
+                  deco: {underline: {size: 3, color: 00000000}}
+
+  center:
+    - script:
+        path: ~/.config/yambar/scripts/dater.sh
+        args: []
+        content:
+            string: 
+                margin: 0
+                text: "{date}"
+                on-click: sh -c "~/.config/yambar/scripts/calendar.sh show"
+    - clock:
+        content:
+          - string:
+                margin: 0
+                text: "{time}"
+  right: 
+#    - script:
+#        path: ~/.config/yambar/scripts/void-updates.sh
+#        args: []
+#        content: 
+#            string: 
+#                margin: 0
+#                text: "{updates}"
+#                font: *nerdfont
+#                foreground: 98971aff
+#                on-click: sh -c "~/.config/yambar/scripts/void-updates.sh update"
+    - script:
+        path: ~/.config/yambar/scripts/idleinhibit.sh
+        args: []
+        content: 
+            string: 
+                margin: 0
+                text: "{idleinhibit}"
+                font: *nerdfont
+                on-click: sh -c "~/.config/yambar/scripts/idleinhibit.sh toggle"
+    - backlight:
+        name: amdgpu_bl0
+        content:
+          list:
+            items:
+              - string: {text: , font: *nerdfont}
+              - string: {text: " {percent}%", on-click: { left: sh -c "light -U 5", right: sh -c "light -A 5"}}
+    - network:
+        poll-interval: 1000
+        content:
+          map:
+            # Aquí decides qué mostrar basándote en el nombre de la interfaz interna
+            conditions:
+              name == "lo": {empty: {}} # Ignora el loopback
+              name == "wlp1s0":
+                map:
+                  default: {string: {text: " ", font: *nerdfont, foreground: ffffff66}}
+                  conditions:
+                    state == up:
+                      list:
+                        items:
+                          - string: {text: "  ", font: *nerdfont}
+                          - string: {text: "{ssid} {dl-speed:mb}/{ul-speed:mb} Mb/s"}
+
+    - battery:
+        name: BAT0
+        poll-interval: 10000
+        anchors:
+          discharging: &discharging
+            list:
+              items:
+                - ramp:
+                    tag: capacity
+                    items:
+                      - string: {text: , foreground: ff0000ff, font: *nerdfont}
+                      - string: {text: , foreground: ffa600ff, font: *nerdfont}
+                      - string: {text: , font: *nerdfont}
+                      - string: {text: , font: *nerdfont}
+                      - string: {text: , font: *nerdfont}
+                      - string: {text: , font: *nerdfont}
+                      - string: {text: , font: *nerdfont}
+                      - string: {text: , font: *nerdfont}
+                      - string: {text: , font: *nerdfont}
+                      - string: {text: , foreground: ffffffff, font: *nerdfont}
+                - string: {text: "{capacity}% {estimate}"}
+        content:
+          map:
+            conditions:
+              state == unknown:
+                <<: *discharging
+              state == discharging:
+                <<: *discharging
+              state == charging:
+                - string: {text: , foreground: ffffffff, font: *nerdfont}
+                - string: {text: " {capacity}% {estimate}"}
+              state == full:
+                - string: {text: , foreground: ffffffff, font: *nerdfont}
+                - string: {text: " {capacity}% full"}
+              state == "not charging":
+                - ramp:
+                    tag: capacity
+                    items:
+                      - string: {text:  , foreground: ff0000ff, font: *nerdfont}
+                      - string: {text:  , foreground: ffa600ff, font: *nerdfont}
+                      - string: {text:  , foreground: ffffffff, font: *nerdfont}
+                      - string: {text:  , foreground: ffffffff, font: *nerdfont}
+                      - string: {text:  , foreground: ffffffff, font: *nerdfont}
+                      - string: {text:  , foreground: ffffffff, font: *nerdfont}
+                      - string: {text:  , foreground: ffffffff, font: *nerdfont}
+                      - string: {text:  , foreground: ffffffff, font: *nerdfont}
+                      - string: {text:  , foreground: ffffffff, font: *nerdfont}
+                      - string: {text:  , foreground: ffffffff, font: *nerdfont}
+                - string: {text: "{capacity}%"}
